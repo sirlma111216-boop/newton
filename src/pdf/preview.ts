@@ -2,9 +2,24 @@
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+let workerReady: Promise<void> | null = null;
+/** 오프라인 한 파일 버전에서는 worker가 data: 주소로 들어 있어서, blob 주소로 바꿔 씁니다. */
+function setupWorker(): Promise<void> {
+  if (!workerReady) {
+    workerReady = (async () => {
+      if (workerUrl.startsWith('data:')) {
+        const blob = await (await fetch(workerUrl)).blob();
+        pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([blob], { type: 'text/javascript' }));
+      } else {
+        pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+      }
+    })();
+  }
+  return workerReady;
+}
 
 export async function renderPdfToCanvases(blob: Blob, cssWidth: number): Promise<HTMLCanvasElement[]> {
+  await setupWorker();
   const data = new Uint8Array(await blob.arrayBuffer());
   const task = pdfjs.getDocument({ data });
   const doc = await task.promise;

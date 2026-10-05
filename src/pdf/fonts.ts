@@ -2,21 +2,21 @@ import { Font } from '@react-pdf/renderer';
 
 // 글꼴: 나눔명조(OFL), Noto Sans KR(OFL). 한글 11,172자와 기본 기호만 남겨 크기를 줄였습니다.
 // 라이선스 파일: public/fonts/OFL-*.txt
-const FILES = {
-  serif: 'fonts/NanumMyeongjo-Regular.ttf',
-  serifHeavy: 'fonts/NanumMyeongjo-ExtraBold.ttf',
-  sans: 'fonts/NotoSansKR-Bold.ttf',
-};
+// 웹 배포에서는 별도 파일로, 오프라인 한 파일 버전에서는 HTML 안에 들어갑니다.
+import serifUrl from '../assets/fonts/NanumMyeongjo-Regular.ttf?url';
+import serifHeavyUrl from '../assets/fonts/NanumMyeongjo-ExtraBold.ttf?url';
+import sansUrl from '../assets/fonts/NotoSansKR-Bold.ttf?url';
+
+const FILES = { serif: serifUrl, serifHeavy: serifHeavyUrl, sans: sansUrl };
 
 export class FontError extends Error {}
 
 let ready: Promise<void> | null = null;
 
-async function fetchFont(path: string): Promise<string> {
-  const url = new URL(path, document.baseURI).href;
+async function fetchFont(url: string): Promise<string> {
   let res: Response;
   try {
-    res = await fetch(url, { cache: 'force-cache' });
+    res = await fetch(url, url.startsWith('data:') ? undefined : { cache: 'force-cache' });
   } catch {
     throw new FontError('신문 글꼴을 내려받지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.');
   }
